@@ -1378,6 +1378,24 @@ class ProjectTest(DockerClientTestCase):
         project.up(scale_override={'web': 1})
         assert len(project.containers()) == 1
 
+    def test_project_up_scale_with_port_binding(self):
+        config_data = build_config(
+            services=[{
+                'name': 'web',
+                'image': BUSYBOX_IMAGE_WITH_TAG,
+                'scale': 2,
+                'ports': ['1234:1234']
+            }]
+        )
+
+        with pytest.raises(config.ConfigurationError) as e:
+            Project.from_config(
+                name='composetest',
+                config_data=config_data, client=self.client
+            )
+
+        assert 'Port bindings are incompatible with scale' in str(e.value)
+
     def test_initialize_volumes(self):
         vol_name = '{:x}'.format(random.getrandbits(32))
         full_vol_name = 'composetest_{}'.format(vol_name)

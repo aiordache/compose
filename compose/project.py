@@ -306,6 +306,11 @@ class Project:
         scale = service_dict.get('scale', None)
         deploy_dict = service_dict.get('deploy', None)
         if not deploy_dict:
+            if scale and scale > 1 and len(service_dict.get('ports', [])):
+                raise ConfigurationError(
+                    "Port bindings are incompatible with scale/deploy.replicas,"
+                    " same port cannot be mapped for more than one container."
+                )
             return 1 if scale is None else scale
 
         if deploy_dict.get('mode', 'replicated') != 'replicated':
@@ -327,6 +332,11 @@ class Project:
             scale)
 
         scale = min(scale, max_replicas)
+        if scale > 1 and len(service_dict.get('ports', [])):
+            raise ConfigurationError(
+                "Port bindings are incompatible with scale/deploy.replicas,"
+                " same port cannot be mapped for more than one container."
+            )
         if max_replicas < scale:
             log.warning("Scale is limited to {} ('max_replicas_per_node' field).".format(
                 max_replicas))
